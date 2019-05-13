@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=750, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>Document</title>
+	<style lang="">
+		* {
+			margin: 0;
+			padding: 0
+		}
+
+		html,
+		body {
+			font-size: 0;
+			height: 100%;
+		}
+	</style>
+</head>
+
+<body>
+	<canvas id='webgl'></canvas>
+
+	<script id='shader' type="x-shader/x-vertex">
+		attribute vec4 aVertexPosition;
+		uniform mat4 uModelViewMatrix;
+		uniform mat4 uProjectionMatrix;
+
+		void main(){
+			gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
+		}
+	</script>
+
+	<script>
+		(function () {
+			var util = {
+				viewW: window.innerWidth,
+				viewH: window.innerHeight,
+				init() {
+					this.setSize();
+					this.graphics();
+				},
+				setSize() {
+					var canvas = document.getElementById('webgl');
+					canvas.width = this.viewW;
+					canvas.height = this.viewH;
+					var gl = canvas.getContext('webgl');
+					this.gl = gl;
+				},
+				graphics() {
+					this.initShader();
+				},
+				initShader() {
+					var VSHADER_SOURCE =
+						"void main() {" +
+						//设置坐标
+						"gl_Position = vec4(0, 0.0, 0.0, 1.0); " +
+						//设置尺寸
+						"gl_PointSize = 20.0; " +
+						"} ";
+
+					//片元着色器
+					var FSHADER_SOURCE =
+						"void main() {" +
+						//设置颜色
+						"gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);" +
+						"}";
+					var { gl } = this;
+					var vertshader = this.loadShader(gl.VERTEX_SHADER, VSHADER_SOURCE);
+					var flagShader = this.loadShader(gl.FRAGMENT_SHADER, FSHADER_SOURCE);
+
+					var shaderProgram = gl.createProgram();
+					gl.attachShader(shaderProgram, vertshader);
+					gl.attachShader(shaderProgram, flagShader);
+					gl.linkProgram(shaderProgram);
+					gl.useProgram(shaderProgram);
+					console.log(gl)
+					gl.drawArrays(gl.POINTS, 0, 1);
+
+				},
+				loadShader(type, source) {
+					var { gl } = this;
+					var shader = gl.createShader(type);
+					gl.shaderSource(shader, source);//将源代码发送到着色器。
+
+					gl.compileShader(shader);
+
+					return shader;
+				}
+			}
+
+			util.init();
+		})();
+	</script>
+</body>
+
+</html>

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<meta name="viewport" content="width=750, initial-scale=1.0">
+	<meta name="viewport" content="width=750, user-scalable=no">
 	<meta http-equiv="X-UA-Compatible" content="ie=edge">
 	<title>Document</title>
 	<style lang="">
@@ -10,19 +10,25 @@
 		html,body{
 			font-size:0;
 			height: 100%;
+			overflow: hidden;
+			height: 100%;
 		}
+		
 	</style>
 </head>
 <body>
 	<canvas id='webgl'></canvas>
 
-	<script id='shader' type="x-shader/x-vertex">
+	<script id='x-shader' type="x-shader/x-vertex">
 		attribute vec4 aVertexPosition;
-		uniform mat4 uModelViewMatrix;
-		uniform mat4 uProjectionMatrix;
-
 		void main(){
-			gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
+			gl_Position = aVertexPosition;
+		}
+	</script>
+
+	<script id='f-shader' type="x-shader/x-fragment">
+		void main(){
+			gl_FragColor = vec4(1.0,0.5,0,1.0);
 		}
 	</script>
 
@@ -43,43 +49,51 @@
 					this.gl = gl;
 				},
 				graphics(){
-					this.initShader();
-				},
-				initShader(){
-					 var VSHADER_SOURCE =
-						"void main() {" +
-						//设置坐标
-						"gl_Position = vec4(0.0, 0.0, 0.0, 1.0); " +
-						//设置尺寸
-						"gl_PointSize = 10.0; " +
-						"} ";
-
-					//片元着色器
-					var FSHADER_SOURCE =
-						"void main() {" +
-						//设置颜色
-						"gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);" +
-						"}";
 					var {gl} = this;
-					var vertshader = this.loadShader(gl.VERTEX_SHADER, VSHADER_SOURCE);
-					var flagShader = this.loadShader(gl.FRAGMENT_SHADER, FSHADER_SOURCE);
+					gl.viewport(0,0,this.viewW,this.viewH);
+					
+					var vShader = this.loadShader(gl.VERTEX_SHADER,document.querySelector('#x-shader').innerText);
+					var fShader = this.loadShader(gl.FRAGMENT_SHADER, document.querySelector('#f-shader').innerText);
 
-					var shaderProgram = gl.createProgram();
-					gl.attachShader(shaderProgram,vertshader);
-					gl.attachShader(shaderProgram,flagShader);
-					gl.linkProgram(shaderProgram);
-					gl.useProgram(shaderProgram);
+					gl.compileShader(vShader);
+					gl.compileShader(fShader);
 
-					gl.drawArrays(gl.POINTS,0,1);
+					var program = gl.createProgram();
+
+					gl.attachShader(program,vShader);
+					gl.attachShader(program,fShader);
+
+					gl.linkProgram(program);
+					gl.useProgram(program);
+
+					var vertices = new Float32Array([
+						-0.5, 0.5,
+						-0.5, -0.5, 
+						0.5, 0.5,
+						0.5, -0.5
+					]);
+
+					var vertexBuffer = gl.createBuffer();//创建缓冲区
+					gl.bindBuffer(gl.ARRAY_BUFFER,vertexBuffer);//绑定缓冲区
+
+					gl.bufferData(gl.ARRAY_BUFFER,vertices,gl.STATIC_DRAW);//将CPU中的数组与
+
+					var aVertexPosition = gl.getAttribLocation(program,'aVertexPosition');
+
+					gl.vertexAttribPointer(aVertexPosition,2,gl.FLOAT,true,0,0);
+
+					gl.enableVertexAttribArray(aVertexPosition);
+
+					gl.drawArrays(gl.TRIANGLE_FAN,0,4);
+
 
 				},
+			
 				loadShader(type,source){
 					var {gl} = this;
-					var shader = gl.createShader(type);
-					gl.shaderSource(shader,source);//将源代码发送到着色器。
 
-					gl.compileShader(shader);
-
+					var shader = gl.createShader(type);//创建着色器。
+					gl.shaderSource(shader,source);//
 					return shader;
 				}
 			}
